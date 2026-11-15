@@ -1,0 +1,23 @@
+{
+  "baseUrl": "http://127.0.0.1:8787",
+  "appid": "wxTESTAPPID0000001",
+  "roomNo": "301",
+  "sign": {
+    "type": "md5",
+    "template": "{sortedParams}&ts={ts}&k={secret}",
+    "secret": "DORM9f2c",
+    "placement": "header",
+    "headerName": "X-Sign",
+    "sendTs": true
+  },
+  "api": {
+    "login": "/api/dorm/auth/login",
+    "roomInfo": "/api/dorm/room/info",
+    "recover": "/api/dorm/power/recover"
+  },
+  "okCode": 0,
+  "verify": { "enabled": true, "retries": 3, "intervalMs": 300 },
+  "retry": { "times": 2, "backoffMs": 200 },
+  "jitterMs": 0,
+  "timeoutMs": 5000
+}

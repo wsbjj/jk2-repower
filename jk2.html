@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>JK-2 宿舍复电</title>
+<style>
+  :root{
+    --bg:#0e1116; --panel:#161b22; --panel2:#1c2230; --line:#2a3140;
+    --text:#e6edf3; --dim:#8b949e; --accent:#2f81f7; --ok:#3fb950;
+    --warn:#d29922; --err:#f85149;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{
+    margin:0;background:var(--bg);color:var(--text);
+    font:15px/1.6 -apple-system,BlinkMacSystemFont,"SF Pro SC","PingFang SC",system-ui,sans-serif;
+    padding:20px 16px 60px;
+  }
+  .wrap{max-width:680px;margin:0 auto}
+  h1{font-size:20px;margin:0 0 4px;font-weight:600}
+  .sub{color:var(--dim);font-size:13px;margin-bottom:20px}
+  .card{
+    background:var(--panel);border:1px solid var(--line);border-radius:12px;
+    padding:16px;margin-bottom:14px;
+  }
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  button{
+    font:inherit;font-weight:500;border-radius:9px;border:1px solid var(--line);
+    background:var(--panel2);color:var(--text);padding:10px 16px;cursor:pointer;
+    transition:.15s;
+  }
+  button:hover:not(:disabled){border-color:#3d4757;background:#22293a}
+  button:active:not(:disabled){transform:scale(.98)}
+  button:disabled{opacity:.42;cursor:not-allowed}
+  button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  button.primary:hover:not(:disabled){background:#3d8ef8}
+  button.danger{background:#3d1f24;border-color:#6b2d33;color:#ff9b95}
+  select{
+    font:inherit;background:var(--panel2);color:var(--text);border:1px solid var(--line);
+    border-radius:9px;padding:10px 12px;flex:1;min-width:180px;
+  }
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+  .item{background:var(--panel2);border-radius:9px;padding:10px 12px}
+  .item .k{color:var(--dim);font-size:12px;margin-bottom:2px}
+  .item .v{font-size:17px;font-weight:600;font-variant-numeric:tabular-nums}
+  .item .v small{font-size:12px;font-weight:400;color:var(--dim);margin-left:3px}
+  .badge{
+    display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;
+    padding:3px 9px;border-radius:999px;vertical-align:middle;
+  }
+  .badge.on{background:rgba(63,185,80,.15);color:var(--ok)}
+  .badge.off{background:rgba(248,81,73,.15);color:var(--err)}
+  .badge.wait{background:rgba(210,153,34,.15);color:var(--warn)}
+  #log{
+    background:#0a0d12;border:1px solid var(--line);border-radius:9px;
+    padding:10px 12px;height:190px;overflow:auto;font:12px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;
+    color:#9da7b3;white-space:pre-wrap;word-break:break-all;
+  }
+  #log .t{color:#4d5866}
+  #log .ok{color:var(--ok)}
+  #log .er{color:var(--err)}
+  #log .ac{color:#58a6ff}
+  .hint{color:var(--dim);font-size:12.5px;margin-top:10px;line-height:1.65}
+  .hint code{background:#0a0d12;padding:1px 5px;border-radius:4px;color:#9da7b3}
+  .warnbox{
+    background:rgba(210,153,34,.1);border:1px solid rgba(210,153,34,.35);
+    border-radius:10px;padding:12px 14px;font-size:13.5px;color:#e3b341;margin-bottom:14px;
+  }
+  .warnbox b{color:#f0c674}
+  .devtag{
+    display:inline-flex;align-items:center;gap:6px;background:var(--panel2);
+    border:1px solid var(--line);border-radius:8px;padding:5px 10px;font-size:13px;
+  }
+  .devtag .x{cursor:pointer;color:var(--dim);font-weight:700;padding:0 2px}
+  .devtag .x:hover{color:var(--err)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>JK-2 宿舍复电</h1>
+  <div class="sub">Web Bluetooth · 无需安装 · 数据只在你本机</div>
+
+  <div id="noBt" class="warnbox" style="display:none">
+    <b>当前浏览器不支持 Web Bluetooth</b><br>
+    请用 <b>Chrome / Edge</b> 打开，并且必须通过 <code>http://localhost</code> 访问
+    （Safari 不支持，<code>file://</code> 直接打开也不行）。
+    <br><br>在项目目录执行：<br>
+    <code>python3 -m http.server 8080</code><br>
+    然后打开 <code>http://localhost:8080/jk2.html</code>
+  </div>
+
+  <div class="card">
+    <div class="row" style="margin-bottom:12px">
+      <select id="devSel"></select>
+      <button id="btnAdd">＋ 添加设备</button>
+      <button id="btnDel" title="从列表移除">✕</button>
+    </div>
+    <div class="row">
+      <button id="btnStatus" class="primary">查询状态</button>
+      <button id="btnRecover">复电</button>
+      <button id="btnWatch">开始守护</button>
+    </div>
+    <div class="hint">
+      第一次点按钮会弹出蓝牙选择框，选 <code>B03-xxxx</code> 那个。
+      之后浏览器会记住授权，不再弹窗。
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="row" style="justify-content:space-between;margin-bottom:12px">
+      <span style="font-weight:600">设备状态</span>
+      <span id="stateBadge" class="badge wait">未知</span>
+    </div>
+    <div class="grid" id="stats">
+      <div class="item"><div class="k">电压</div><div class="v" id="vV">—</div></div>
+      <div class="item"><div class="k">电流</div><div class="v" id="vA">—</div></div>
+      <div class="item"><div class="k">累计电量</div><div class="v" id="vKwh">—</div></div>
+      <div class="item"><div class="k">功率因数</div><div class="v" id="vPf">—</div></div>
+      <div class="item"><div class="k">供电时段</div><div class="v" id="vWin" style="font-size:14px">—</div></div>
+      <div class="item"><div class="k">固件</div><div class="v" id="vFw" style="font-size:14px">—</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div style="font-weight:600;margin-bottom:10px">日志</div>
+    <div id="log"></div>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+const SERVICE = "0000ffe0-0000-1000-8000-00805f9b34fb";
+const CHAR    = "0000ffe1-0000-1000-8000-00805f9b34fb";
+const BASE    = localStorage.getItem("jk2.base") || "https://thingsboard.example.com:8080";
+const CHUNK   = 80;
+const LS_KEY  = "jk2.devices";
+
+const $ = (id) => document.getElementById(id);
+const enc = new TextEncoder();
+const dec = new TextDecoder();
+
+/* ── 日志 ── */
+function log(msg, cls = "") {
+  const el = $("log");
+  const t = new Date().toTimeString().slice(0, 8);
+  const line = document.createElement("div");
+  line.innerHTML = `<span class="t">[${t}]</span> <span class="${cls}">${escapeHtml(msg)}</span>`;
+  el.appendChild(line);
+  el.scrollTop = el.scrollHeight;
+}
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+}
+
+/* ── 设备列表（localStorage） ── */
+function loadDevices() {
+  try { return JSON.parse(localStorage.getItem(LS_KEY)) || []; } catch { return []; }
+}
+function saveDevices(list) {
+  localStorage.setItem(LS_KEY, JSON.stringify(list));
+}
+function renderDevices() {
+  const sel = $("devSel");
+  const list = loadDevices();
+  sel.innerHTML = "";
+  if (!list.length) {
+    const o = document.createElement("option");
+    o.textContent = "（还没有设备，点「添加设备」）";
+    o.value = "";
+    sel.appendChild(o);
+    return;
+  }
+  for (const d of list) {
+    const o = document.createElement("option");
+    o.value = d.token;
+    o.textContent = d.label && d.label !== d.token ? `${d.label}（${d.token}）` : d.token;
+    sel.appendChild(o);
+  }
+}
+
+/* ── Web Bluetooth 支持检测 ── */
+const btSupported = !!(navigator.bluetooth) && window.isSecureContext;
+if (!btSupported) {
+  $("noBt").style.display = "block";
+  ["btnAdd","btnStatus","btnRecover","btnWatch"].forEach(id => $(id).disabled = true);
+}
+
+/* ── 已授权设备缓存（getDevices 免弹窗） ── */
+const granted = new Map();   // name -> BluetoothDevice
+
+async function syncGranted() {
+  if (!navigator.bluetooth.getDevices) return;
+  try {
+    const list = await navigator.bluetooth.getDevices();
+    for (const d of list) if (d.name) granted.set(d.name, d);
+    if (list.length) log(`浏览器已记住 ${list.length} 个设备授权`, "ac");
+  } catch (e) { /* 忽略 */ }
+}
+
+async function getDevice(token) {
+  if (granted.has(token)) {
+    const d = granted.get(token);
+    if (d.gatt) return d;
+  }
+  log(`请在弹出的窗口中选择 ${token} …`, "ac");
+  const d = await navigator.bluetooth.requestDevice({
+    filters: [{ namePrefix: "B03-" }],
+    optionalServices: [SERVICE],
+    // 若浏览器支持，优先限定到该设备
+    ...(navigator.bluetooth.getDevices ? {} : {})
+  });
+  if (d.name !== token) {
+    log(`注意：你选的是 ${d.name}，不是 ${token}`, "er");
+  }
+  granted.set(d.name, d);
+  return d;
+}
+
+/* ── 云端取指令 ── */
+async function rpc(token, method) {
+  const res = await fetch(`${BASE}/api/v1/${token}/rpc`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ method, params: { temperature: "25" } }),
+  });
+  if (!res.ok) throw new Error(`云端 ${res.status}`);
+  return res.json();
+}
+
+async function fetchCommands(token) {
+  const cfg = await rpc(token, "getCurrentRPCStr");
+  const encRpc = await rpc(token, "getCurrentRPCStr_B03.08");
+  const payload = (encRpc && typeof encRpc === "object" && "rpcResponse" in encRpc)
+    ? JSON.stringify(encRpc)
+    : JSON.stringify({ rpcResponse: encRpc });
+  return { cfg: String(cfg), payload };
+}
+
+/* ── 写入（分 80 字节，Write Request） ── */
+async function writeAll(ch, text) {
+  const bytes = enc.encode(text);
+  for (let i = 0; i < bytes.length; i += CHUNK) {
+    const part = bytes.slice(i, i + CHUNK);
+    if (ch.writeValueWithResponse) await ch.writeValueWithResponse(part);
+    else await ch.writeValue(part);
+    await new Promise(r => setTimeout(r, 120));
+  }
+  return bytes.length;
+}
+
+/* ── 状态解析 ── */
+function parseStatus(text) {
+  const out = {};
+  for (const part of text.split(",")) {
+    const i = part.indexOf(":");
+    if (i < 0) continue;
+    const k = part.slice(0, i);
+    if (/^\d+$/.test(k)) out[+k] = part.slice(i + 1);
+  }
+  return out;
+}
+
+function fmtWindow(w) {
+  const m = /^(\d{4})-(\d{4})$/.exec(w || "");
+  if (!m) return w || "—";
+  const f = s => `${s.slice(0, 2)}:${s.slice(2)}`;
+  return `${f(m[1])} ~ ${f(m[2])}`;
+}
+
+function renderStatus(st) {
+  if (!st) return;
+  const on = st[24] === "Y";
+  const badge = $("stateBadge");
+  badge.className = "badge " + (on ? "on" : "off");
+  badge.textContent = on ? "已通电" : "已断电";
+  $("vV").innerHTML = `${st[6] ?? "—"}<small>V</small>`;
+  $("vA").innerHTML = `${st[7] ?? "—"}<small>A</small>`;
+  $("vKwh").innerHTML = `${st[4] ?? "—"}<small>kWh</small>`;
+  $("vPf").textContent = st[8] ?? "—";
+  $("vWin").textContent = fmtWindow(st[27]) + "（12h）";
+  $("vFw").textContent = `${st[18] ?? ""} ${st[19] ?? ""}`.trim() || "—";
+}
+
+/* ── 主流程：连设备 → 取指令 → 写 → 收状态 ── */
+async function talk(token, { quiet = false } = {}) {
+  const dev = await getDevice(token);
+  if (!dev.gatt) throw new Error("设备不支持 GATT");
+
+  const server = dev.gatt.connected ? dev.gatt : await dev.gatt.connect();
+  const svc = await server.getPrimaryService(SERVICE);
+  const ch = await svc.getCharacteristic(CHAR);
+
+  let statusText = null;
+  const onNotify = (e) => {
+    const t = dec.decode(e.target.value);
+    if (!quiet) log(`← ${t.length > 90 ? t.slice(0, 90) + "…" : t}`, "ok");
+    if (/\b24:[YN]/.test(t)) statusText = t;
+  };
+
+  await ch.startNotifications();
+  ch.addEventListener("characteristicvaluechanged", onNotify);
+
+  try {
+    const { cfg, payload } = await fetchCommands(token);
+    if (!quiet) log(`云端指令就绪：配置串 ${cfg.length}B，加密RPC ${payload.length}B`, "ac");
+
+    await writeAll(ch, cfg);
+    await writeAll(ch, payload);
+
+    // 等状态回报，最多 12 秒
+    const t0 = Date.now();
+    while (!statusText && Date.now() - t0 < 12000) {
+      await new Promise(r => setTimeout(r, 250));
+    }
+  } finally {
+    ch.removeEventListener("characteristicvaluechanged", onNotify);
+    try { await ch.stopNotifications(); } catch {}
+  }
+
+  if (!statusText) throw new Error("没收到状态回报（设备可能没响应）");
+  return parseStatus(statusText);
+}
+
+/* ── 按钮 ── */
+let busy = false;
+async function guard(fn) {
+  if (busy) return;
+  busy = true;
+  [...document.querySelectorAll("button")].forEach(b => b.disabled = true);
+  try { await fn(); }
+  catch (e) { log("错误：" + (e.message || e), "er"); }
+  finally {
+    busy = false;
+    [...document.querySelectorAll("button")].forEach(b => b.disabled = !btSupported);
+    if (!btSupported) ["btnAdd","btnStatus","btnRecover","btnWatch"].forEach(id => $(id).disabled = true);
+  }
+}
+
+$("btnAdd").onclick = () => guard(async () => {
+  const d = await navigator.bluetooth.requestDevice({
+    filters: [{ namePrefix: "B03-" }],
+    optionalServices: [SERVICE],
+  });
+  const token = d.name;
+  if (!token) { log("设备没有名字，跳过", "er"); return; }
+  granted.set(token, d);
+  const list = loadDevices();
+  if (!list.find(x => x.token === token)) {
+    list.push({ token, label: token });
+    saveDevices(list);
+    renderDevices();
+    $("devSel").value = token;
+    log(`已添加 ${token}`, "ok");
+  } else {
+    log(`${token} 已在列表中`, "ac");
+  }
+});
+
+$("btnDel").onclick = () => {
+  const token = $("devSel").value;
+  if (!token) return;
+  saveDevices(loadDevices().filter(x => x.token !== token));
+  renderDevices();
+  log(`已移除 ${token}`, "ac");
+};
+
+$("btnStatus").onclick = () => guard(async () => {
+  const token = $("devSel").value;
+  if (!token) return;
+  $("stateBadge").className = "badge wait";
+  $("stateBadge").textContent = "查询中";
+  log(`── 查询 ${token} ──`, "ac");
+  const st = await talk(token);
+  renderStatus(st);
+  log(`电压 ${st[6]}V 电流 ${st[7]}A 开关 ${st[24]}`, "ok");
+});
+
+$("btnRecover").onclick = () => guard(async () => {
+  const token = $("devSel").value;
+  if (!token) return;
+  $("stateBadge").className = "badge wait";
+  $("stateBadge").textContent = "复电中";
+  log(`── 复电 ${token} ──`, "ac");
+  const st = await talk(token);
+  renderStatus(st);
+  log(st[24] === "Y" ? "复电成功 ✓" : "指令已发送，但开关仍为关闭", st[24] === "Y" ? "ok" : "er");
+});
+
+let watchTimer = null;
+$("btnWatch").onclick = async () => {
+  if (watchTimer) {
+    clearInterval(watchTimer);
+    watchTimer = null;
+    $("btnWatch").textContent = "开始守护";
+    $("btnWatch").classList.remove("danger");
+    log("守护已停止", "ac");
+    return;
+  }
+  const token = $("devSel").value;
+  if (!token) return;
+
+  const okGo = confirm(
+    "⚠  守护模式风险提示\n\n" +
+    "此模式会每 60 秒向监控器写入一次指令。\n\n" +
+    "已知风险：写入过频可能导致设备 RTC 异常（故障码 24），\n" +
+    "表现为电压/电流/电量全部读 0、继电器锁死断开 ——\n" +
+    "【房间会直接没电】，而且软件无法修复。\n\n" +
+    "恢复办法：\n" +
+    "  · 拔掉 JK-2 电源，等 10 秒再插上；或\n" +
+    "  · 等 30 分钟让设备自行退出保护态\n\n" +
+    "对比：手动扫码一次 = 1 次写入。\n" +
+    "本模式每天约写入 1440 次。\n\n" +
+    "日常复电建议直接用「复电」按钮，不要长期挂守护。\n\n" +
+    "确认继续？"
+  );
+  if (!okGo) { log("已取消守护", "ac"); return; }
+
+  $("btnWatch").textContent = "停止守护";
+  $("btnWatch").classList.add("danger");
+  log(`守护启动：${token}，每 60 秒检查（页面需保持打开）`, "ac");
+  log("⚠ 已启用守护：注意不要长时间挂着，可能触发设备 RTC 异常", "er");
+
+  const tick = async () => {
+    if (busy) return;
+    busy = true;
+    try {
+      const st = await talk(token, { quiet: true });
+      renderStatus(st);
+      log(`[守护] 开关 ${st[24]} 电压 ${st[6]}V 电流 ${st[7]}A`, "ac");
+      if (st[24] !== "Y") {
+        log("[守护] 检测到断电，执行复电 …", "ac");
+        const st2 = await talk(token, { quiet: true });
+        renderStatus(st2);
+        log(st2[24] === "Y" ? "[守护] 复电成功 ✓" : "[守护] 复电未确认", st2[24] === "Y" ? "ok" : "er");
+      }
+    } catch (e) {
+      log("[守护] " + (e.message || e), "er");
+    } finally { busy = false; }
+  };
+
+  tick();
+  watchTimer = setInterval(tick, 60000);
+};
+
+/* ── 初始化 ── */
+(async function init() {
+  renderDevices();
+  if (!btSupported) {
+    log("Web Bluetooth 不可用，请用 Chrome/Edge 并通过 http://localhost 打开", "er");
+    return;
+  }
+  log("就绪。点「添加设备」开始。", "ok");
+  await syncGranted();
+  const list = loadDevices();
+  if (list.length && granted.has(list[0].token)) {
+    log(`已恢复 ${list[0].token} 的授权`, "ac");
+  }
+})();
+</script>
+</body>
+</html>

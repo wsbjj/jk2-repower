@@ -1,0 +1,53 @@
+# ══════════════════════════════════════════════════════════════
+#  私有数据目录：本机凭据 / 抓包 / 样本 / 日志 / 逆向产物
+#  整个 private/ 永远不进仓库
+# ══════════════════════════════════════════════════════════════
+private/
+
+# 本机接手笔记：AGENT.md 已移入 private/，这里兜底防止再落回根目录
+AGENT.md
+# 本地发布策划（包含个人路径和未核实的运营数据）
+docs/命名与GitHub发布.md
+
+# 私有文件（已移入 private/，此处兜底：防止误放回根目录）
+config.json
+.state.json
+.test-config.json
+ble/devices.json
+ble/.lastwrite.json
+portable/devices.json
+portable/.lastwrite.json
+local.env
+.test-out*/
+samples/
+analysis/
+analysis2/
+launchd/
+ProxyPin*.har
+*.har
+*.pklg
+设备二维码.jpg
+captures/
+
+# 运行期产物
+logs/*
+!logs/.gitkeep
+*.log
+*.err.log
+
+# 通用
+.DS_Store
+**/.DS_Store
+node_modules/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+out/
+out-real/
+pkg/
+tmp/
+*.tmp
+.env
+.env.*
+!.env.example

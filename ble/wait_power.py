@@ -24,7 +24,7 @@ from datetime import datetime
 
 TOKEN = os.environ.get("DEV_TOKEN", "")
 CH = "0000ffe1-0000-1000-8000-00805f9b34fb"
-BASE = os.environ.get("JK2_BASE", "https://thingsboard.example.com:8080")
+BASE = os.environ.get("JK2_BASE", "https://www.myneepu.com:8080")
 
 
 def log(*a):

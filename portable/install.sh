@@ -16,4 +16,4 @@ python3 -c "import bleak; print('bleak OK')"
 
 echo
 echo "== 下一步 =="
-echo "设置 JK2_BASE 后执行: python3 jk2.py status --token 你的设备令牌"
+echo "执行: python3 jk2.py status --token 你的设备令牌"

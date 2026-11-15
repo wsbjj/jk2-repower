@@ -58,7 +58,7 @@ if [ -f private/local.env ]; then
   set +u; set -a; . private/local.env; set +a; set -u
 fi
 export PRIVATE_DIR="${PRIVATE_DIR:-$PWD/private}"
-BASE_URL="${JK2_BASE:-https://thingsboard.example.com:8080}"
+BASE_URL="${JK2_BASE:-https://www.myneepu.com:8080}"
 
 # 把 launchd 模板渲染成本机真实 plist（含真实路径与令牌），落在 private/launchd/
 render_plist() {
@@ -71,6 +71,16 @@ render_plist() {
       -e "s|__PYTHON__|$(command -v python3 || echo /usr/bin/python3)|g" \
       "$tpl" > "private/launchd/$name"
   chmod 600 "private/launchd/$name"
+  if [ "$name" = "com.dorm.jk2-daily.plist" ]; then
+    JK2_RENDER_BASE="$BASE_URL" python3 - "private/launchd/$name" <<'PY' || return 1
+import os, plistlib, sys
+with open(sys.argv[1], "rb") as f:
+    plist = plistlib.load(f)
+plist["EnvironmentVariables"]["JK2_BASE"] = os.environ["JK2_RENDER_BASE"]
+with open(sys.argv[1], "wb") as f:
+    plistlib.dump(plist, f)
+PY
+  fi
   printf '%s\n' "private/launchd/$name"
 }
 

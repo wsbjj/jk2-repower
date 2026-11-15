@@ -8,7 +8,7 @@ JK-2 用电监控器 —— 多宿舍复电客户端
   每段 80 字节，Write Request
 
 设备令牌 = 设备名 = B03-<房间号>，云端接口无需登录：
-  https://thingsboard.example.com:8080/api/v1/DEV_TOKEN/...
+  https://www.myneepu.com:8080/api/v1/DEV_TOKEN/...
 
 用法：
   python3 jk2.py rooms                   # 列出已配置的宿舍
@@ -32,7 +32,7 @@ import urllib.request
 from datetime import datetime
 from pathlib import Path
 
-BASE = os.environ.get("JK2_BASE", "https://thingsboard.example.com:8080")
+BASE = os.environ.get("JK2_BASE", "https://www.myneepu.com:8080")
 CH = "0000ffe1-0000-1000-8000-00805f9b34fb"
 CHUNK = 80
 ROOT = Path(__file__).resolve().parent.parent

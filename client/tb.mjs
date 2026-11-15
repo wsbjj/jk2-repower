@@ -3,7 +3,7 @@
  * 用电监控 —— ThingsBoard 直连客户端
  *
  * 通过分析小程序「用电监控扫码」，确认其云端是 ThingsBoard：
- *   https://thingsboard.example.com:8080
+ *   https://www.myneepu.com:8080
  *
  * 关键发现：设备的通断由「共享属性」控制，不需要蓝牙、不需要扫码。
  *
@@ -35,7 +35,7 @@ const PRIVATE = path.resolve(process.env.PRIVATE_DIR || path.join(ROOT, 'private
 const STATE = path.join(PRIVATE, 'state', '.tb-state.json');
 const LOG = path.join(PRIVATE, 'logs', 'tb.log');
 
-const BASE = process.env.TB_BASE || process.env.JK2_BASE || 'https://thingsboard.example.com:8080';
+const BASE = process.env.TB_BASE || process.env.JK2_BASE || 'https://www.myneepu.com:8080';
 
 const ATTR_KEYS = [
   'TimerOneOn', 'TimerOneOff',
